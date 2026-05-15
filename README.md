@@ -1,38 +1,37 @@
-#  AI AUGMENTED API Framework
+# AI-AUGMENTED-API-FRAMEWORK Framework
 
 > AI-powered Playwright API testing framework for the Restful-Booker microservice.  
-> Built for the Camascope QA Automation Engineer technical assessment.
-
----
 
 ## What This Is
 
-A production-grade API test framework built with **Playwright + JavaScript** that goes beyond basic status-code checks. It features three **AI agents** (powered by Claude) that can:
+A production-grade API test framework built with **Playwright + JavaScript** that goes beyond basic status-code checks. It features three **AI agents** (powered by OpenAI GPT-4o) that can:
 
 - **Generate test cases** from an API spec description
 - **Suggest smart assertions** for any API response
 - **Summarise test results** as a QA executive report
 
-The tests themselves run fully without an Anthropic API key — the agents are an additive capability, not a dependency.
+The tests themselves run fully without an OpenAI API key — the agents are an additive capability, not a dependency.
 
----
 
 ## Project Structure
 
-```
-restful-booker-ai-qa/
+ao-augmented-api-framework/
 ├── .github/
 │   └── workflows/
 │       └── playwright.yml        # CI/CD — GitHub Actions
 │
-├── agents/                       # AI Agents (Claude-powered)
-│   ├── BaseAgent.js              # Shared Anthropic client + JSON parsing
+├── agents/                       # AI Agents (OpenAI-powered)
+│   ├── BaseAgent.js              # Shared OpenAI client + JSON parsing
 │   ├── TestGeneratorAgent.js     # Generates test cases from API spec
 │   ├── AssertionAgent.js         # Suggests smart assertions for responses
 │   └── ReportAnalyzerAgent.js    # Produces executive summary from test results
 │
 ├── config/
-│   ├── environments.js           # All env vars and endpoint config
+│   ├── env/
+│   │   ├── dev.env               # Dev environment config
+│   │   ├── uat.env               # UAT environment config
+│   │   └── prod.env              # Prod environment config
+│   ├── environments.js           # Environment loader — reads ENV variable
 │   └── global-setup.js           # Pre-run API health check
 │
 ├── fixtures/
@@ -56,12 +55,10 @@ restful-booker-ai-qa/
 │   ├── booking-delete.spec.js    # DELETE /booking/{id} (9 tests)
 │   └── security.spec.js          # Security & hygiene (11 tests)
 │
-├── .env.example
 ├── playwright.config.js
 ├── package.json
-├── TEST_STRATEGY.md              # Full test strategy document
+├── test-case-design.docx
 └── README.md
-```
 
 ---
 
@@ -69,8 +66,8 @@ restful-booker-ai-qa/
 
 | Tool | Version |
 |---|---|
-| Node.js | ≥ 18.0.0 |
-| npm | ≥ 9.0.0 |
+| Node.js | 20 LTS (>=20.19.0) |
+| npm | >=10.0.0 |
 
 ---
 
@@ -79,74 +76,91 @@ restful-booker-ai-qa/
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/your-username/restful-booker-ai-qa.git
-cd restful-booker-ai-qa
+git clone https://github.com/Madhuri2510/ai-augmented-api-framework.git
+cd ai-augmented-api-framework
 npm install
 npm install @playwright/test                                              ║
 npx playwright install 
 ```
 
-### 2. Configure environment
+### 2. Configure environment files
 
-```bash
-cp .env.example .env
+Environment-specific configs live in `config/environments/`. Each file contains
+the base URL, credentials, and throttle settings for that environment. You do
+**not** need to edit `.env` for switching environments — just pass the `ENV`
+variable in your npm command.
+
+```
+config/env/dev.env   ← https://restful-booker.herokuapp.com
+config/env/uat.env   ← your UAT base URL
+config/env/prod.env   ← your Prod base URL
 ```
 
-The defaults work out of the box — the Restful-Booker API is public:
+Edit each file to set the correct `baseURL` and credentials for your target
+environment.
 
-```
-BASE_URL=https://restful-booker.herokuapp.com
-BOOKER_USERNAME=admin
-BOOKER_PASSWORD=password123
-ANTHROPIC_API_KEY=           # optional — only needed for AI agents
-```
+### 3. Set your OpenAI API key (optional — only for AI agent features)
 
-To use the AI agent features, add your Anthropic API key:
+For local dev:
+ 1. Open config/env/dev.env
+ 2. Set OPENAI_API_KEY=sk-...
 
-```bash
-# Get a key at https://console.anthropic.com
-echo "ANTHROPIC_API_KEY=sk-ant-..." >> .env
-```
+
+If the key is not set, all 79 tests run normally — the agents simply skip
+enrichment with a console warning.
 
 ---
 
 ## Running the Tests
 
-### Run the full suite
+### Run against a specific environment
+
+Pass the `ENV` variable to select which environment config to load:
 
 ```bash
-npm test
+# Dev (default if ENV is not set)
+npm run test:dev
+
+# UAT
+npm run test:uat
+
+# Prod
+npm run test:prod
 ```
 
-### Run a specific suite
+### Run a specific suite against an environment
 
 ```bash
-npm run test:auth
-npm run test:booking:create
-npm run test:booking:read
-npm run test:booking:update
-npm run test:booking:patch
-npm run test:booking:delete
-npm run test:security
+npm run test:dev:auth
+npm run test:dev:booking:create
+npm run test:dev:security
 ```
 
-### Run with HTML report
+### All available npm scripts
 
 ```bash
-npm run test:report
-# Opens playwright-report/index.html in your browser
+npm test                      # Full suite (uses ENV=dev by default)
+npm run test:dev:auth             # POST /auth tests only
+npm run test:uat:booking:create   # POST /booking tests only
+npm run test:prod:booking:read     # GET /booking tests only
+npm run test:dev:booking:update   # PUT /booking/{id} tests only
+npm run test:dev:booking:patch    # PATCH /booking/{id} tests only
+npm run test:uat:booking:delete   # DELETE /booking/{id} tests only
+npm run test:dev:security         # Security tests only
+npm run test:uat:report           # Full suite + open HTML report in browser
 ```
 
 ### Run with verbose output
 
 ```bash
-npx playwright test --reporter=list
+npm run test:uat --reporter=list
 ```
 
-### Run a single test by title
+### Run a single test by ID
 
 ```bash
-npx playwright test --grep "AUTH-001"
+npm run test:uat -- --grep "AUTH-001"
+npm run test:dev -- --grep "SEC-001"
 ```
 
 ---
@@ -155,10 +169,11 @@ npx playwright test --grep "AUTH-001"
 
 ### Generate test cases from the API spec
 
-Uses Claude to analyse each endpoint and return structured test case scenarios:
+Uses OpenAI GPT-4o to analyse each endpoint and return structured test case
+scenarios:
 
 ```bash
-ANTHROPIC_API_KEY=sk-ant-... npm run generate:tests
+OPENAI_API_KEY=sk-... npm run generate:tests
 # Output: reports/ai-generated-test-cases.json
 ```
 
@@ -167,8 +182,8 @@ ANTHROPIC_API_KEY=sk-ant-... npm run generate:tests
 After a test run, generate an executive summary:
 
 ```bash
-npm test                  # run tests first (generates reports/test-results.json)
-ANTHROPIC_API_KEY=sk-ant-... npm run agent:report
+npm run test:dev                        # run tests first
+npm run agent:report
 # Output: reports/ai-summary.md + printed to stdout
 ```
 
@@ -182,8 +197,39 @@ const suggestions = await agent.suggestAssertions(
   responseBody,
   'POST /booking response'
 );
-// suggestions is an array of { field, assertion, rationale, playwrightCode }
+// suggestions → [{ field, assertion, rationale, playwrightCode }]
 ```
+
+---
+
+## Environment Configuration
+
+Each environment file exports the same shape:
+
+```javascript
+// config/environments/dev.js
+export const envConfig = {
+  baseURL: 'https://restful-booker.herokuapp.com',
+  auth: {
+    username: 'admin',
+    password: 'password123',
+  },
+  throttleMs: 200,  // delay between write ops — increase if API rate-limits
+};
+```
+
+The loader (`config/environments.js`) reads the `ENV` environment variable and
+imports the matching file. If `ENV` is not set it falls back to `dev`. An
+unrecognised value throws at startup with a clear message rather than silently
+using the wrong config.
+
+### Environment file locations
+
+| File | Purpose |
+|---|---|
+| `config/env/dev.env`    | Dev environment |
+| `config/env/uat.env`    | UAT environment |
+| `config/env/prod.env`   | Prod environment |
 
 ---
 
@@ -192,16 +238,15 @@ const suggestions = await agent.suggestAssertions(
 Every test asserts more than just the status code:
 
 ```javascript
-// ❌ What this framework does NOT do
+//  What this framework does NOT do
 expect(res.status()).toBe(200);
 
-// ✅ What this framework does
+// What this framework does
 expect(res.status()).toBe(200);
 const body = await res.json();
 
 // Shape
 expect(typeof body.bookingid).toBe('number');
-expect(typeof body.booking.firstname).toBe('string');
 expect(typeof body.booking.depositpaid).toBe('boolean');
 
 // Range
@@ -219,48 +264,51 @@ See `helpers/assertions.js` for the full set of reusable assertion helpers.
 
 ## CI/CD
 
-The GitHub Actions workflow runs automatically on:
+The GitHub Actions workflow (`.github/workflows/playwright.yml`) runs
+automatically on:
 
 - Every push to `main` / `develop`
 - Every pull request to `main`
 - Nightly at 06:00 UTC
-- Manual trigger via Actions tab
+- Manual trigger via Actions tab (`workflow_dispatch`)
+
+CI runs against **dev** by default. To target UAT or prod, set `ENV` as a
+repository variable under **Settings → Secrets and variables → Actions →
+Variables**.
 
 **Artefacts uploaded per run:**
-- `playwright-report/` — interactive HTML report
-- `reports/test-results.json` — machine-readable results
-- `reports/ai-summary.md` — AI executive summary (when API key is set)
+- `playwright-report/` — interactive HTML report (30-day retention)
+- `reports/test-results.json` — machine-readable results (30-day retention)
+- `reports/ai-summary.md` — OpenAI executive summary (when API key is set)
 
-### Setting up CI secrets
+### Setting up CI secrets and variables
 
-In your GitHub repo: **Settings → Secrets and variables → Actions**
-
-| Secret | Required | Description |
-|---|---|---|
-| `ANTHROPIC_API_KEY` | Optional | Enables AI agent features in CI |
-| `BOOKER_USERNAME` | Optional | Defaults to `admin` |
-| `BOOKER_PASSWORD` | Optional | Defaults to `password123` |
+| Name | Type | Required | Description |
+|---|---|---|---|
+| `OPENAI_API_KEY` | Secret | Optional | Enables AI agent features in CI |
+| `BOOKER_USERNAME` | Secret | Optional | Defaults to `admin` |
+| `BOOKER_PASSWORD` | Secret | Optional | Defaults to `password123` |
+| `ENV` | Variable | Optional | `dev` / `uat` / `prod` — defaults to `dev` |
 
 ---
 
 ## Key Design Decisions
 
-**Sequential execution (`workers: 1`)** — the Restful-Booker API is a shared public
-sandbox. Running tests in parallel would hammer it and produce race conditions
-between tests sharing the same booking IDs. Sequential is slower but reliable.
+**Sequential execution (`workers: 1`)** — the API is a shared sandbox. Parallel
+writes create race conditions between tests sharing booking IDs. Sequential is
+slower but reliable.
 
-**Fresh fixtures per test** — the `testBooking` fixture creates a new booking
-before each test and deletes it after. This gives each test a clean slate
-without depending on pre-existing state.
+**Fresh fixtures per test** — the `testBooking` fixture creates a booking before
+each test and deletes it after, giving each test a clean slate with no dependency
+on pre-existing state.
 
-**Documented known behaviours** — the API has quirks (201 on delete, 405 on
-non-existent ID, lenient type coercion). Rather than marking tests as expected
-failures, these are explicitly documented in `TEST_STRATEGY.md` and in the
-test's inline comment so the next engineer understands the intent.
+**Environment-first config** — base URL and credentials are never hardcoded in
+test files. Switching from dev to UAT or prod is a single `ENV=` prefix — no
+file edits required.
 
-**Agents are optional** — all test logic lives in the Playwright specs. The
-AI agents layer adds intelligence but do not own any assertions. Remove
-`ANTHROPIC_API_KEY` and every test still runs identically.
+**OpenAI agents are optional** — all test logic lives in Playwright specs. The
+OpenAI agents add intelligence but own no assertions. Remove `OPENAI_API_KEY`
+and every test runs identically.
 
 ---
 
@@ -282,14 +330,21 @@ AI agents layer adds intelligence but do not own any assertions. Remove
 ## Troubleshooting
 
 **`globalSetup` fails — API unreachable**  
-The public Restful-Booker API occasionally goes down. Wait a few minutes and retry.
+The public Restful-Booker API occasionally goes down. Wait a few minutes and
+retry. For UAT/prod, verify `baseURL` in the relevant environment file.
+
+**Wrong environment running**  
+Check what `ENV` is set to: `echo $ENV`. If unset it defaults to `dev`. Always
+prefix commands explicitly: `npm run test:dev`.
 
 **Tests fail intermittently**  
-The API resets its state periodically. If you see 404s on booking IDs that
+The dev API resets its state periodically. If you see 404s on booking IDs that
 should exist, the reset likely happened mid-run. Re-run the suite.
 
-**`ANTHROPIC_API_KEY` warnings in output**  
-Expected if you haven't set the key — agents log a warning and no-op. All tests pass normally.
+**`OPENAI_API_KEY` warnings in output**  
+Expected if the key is not set — agents log a warning and no-op. All 79 tests
+still pass normally.
 
 **Rate limiting in CI**  
-If you see 429 responses, increase `throttleMs` in `config/environments.js`.
+Increase `throttleMs` in the relevant environment file (e.g.
+`config/env/uat.env`).

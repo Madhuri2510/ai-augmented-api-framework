@@ -4,24 +4,39 @@
   "description": "AI-powered Playwright API testing framework for Restful-Booker microservice",
   "type": "module",
   "scripts": {
-    "test": "playwright test",
-    "test:auth": "playwright test tests/auth.spec.js",
-    "test:booking:create": "playwright test tests/booking-create.spec.js",
-    "test:booking:read": "playwright test tests/booking-read.spec.js",
-    "test:booking:update": "playwright test tests/booking-update.spec.js",
-    "test:booking:patch": "playwright test tests/booking-patch.spec.js",
-    "test:booking:delete": "playwright test tests/booking-delete.spec.js",
-    "test:security": "playwright test tests/security.spec.js",
-    "test:report": "playwright test --reporter=html && playwright show-report",
-    "generate:tests": "node scripts/generate-tests.js",
-    "agent:report": "node scripts/analyze-report.js"
+    "test":              "playwright test",
+
+    "test:dev":          "cross-env ENV=dev playwright test",
+    "test:uat":          "cross-env ENV=uat playwright test",
+    "test:prod":         "cross-env ENV=prod playwright test",
+
+    "test:dev:auth":     "cross-env ENV=dev playwright test tests/auth.spec.js",
+    "test:dev:create":   "cross-env ENV=dev playwright test tests/booking-create.spec.js",
+    "test:dev:read":     "cross-env ENV=dev playwright test tests/booking-read.spec.js",
+    "test:dev:update":   "cross-env ENV=dev playwright test tests/booking-update.spec.js",
+    "test:dev:patch":    "cross-env ENV=dev playwright test tests/booking-patch.spec.js",
+    "test:dev:delete":   "cross-env ENV=dev playwright test tests/booking-delete.spec.js",
+    "test:dev:security": "cross-env ENV=dev playwright test tests/security.spec.js",
+
+    "test:uat:auth":     "cross-env ENV=uat playwright test tests/auth.spec.js",
+    "test:uat:create":   "cross-env ENV=uat playwright test tests/booking-create.spec.js",
+    "test:uat:read":     "cross-env ENV=uat playwright test tests/booking-read.spec.js",
+    "test:uat:update":   "cross-env ENV=uat playwright test tests/booking-update.spec.js",
+    "test:uat:patch":    "cross-env ENV=uat playwright test tests/booking-patch.spec.js",
+    "test:uat:delete":   "cross-env ENV=uat playwright test tests/booking-delete.spec.js",
+    "test:uat:security": "cross-env ENV=uat playwright test tests/security.spec.js",
+
+    "test:report":       "playwright test --reporter=html && playwright show-report",
+    "generate:tests":    "node scripts/generate-tests.js",
+    "agent:report":      "node scripts/analyze-report.js"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.39.0"
+     "openai": "^4.52.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.50.0",
-    "dotenv": "^16.6.1"
+    "dotenv": "^16.6.1",
+    "cross-env": "^7.0.3"
   },
   "engines": {
     "node": ">=18.0.0"

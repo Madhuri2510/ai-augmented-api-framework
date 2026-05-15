@@ -9,9 +9,9 @@
  * and written to reports/ai-generated-test-cases.json.
  *
  * Usage:
- *   ANTHROPIC_API_KEY=sk-ant-... node scripts/generate-tests.js
+ *   OPENAI_API_KEY=sk-ant-... node scripts/generate-tests.js
  *
- * If ANTHROPIC_API_KEY is not set, the script exits with a helpful message.
+ * If OPENAI_API_KEY is not set, the script exits with a helpful message.
  */
 
 import { writeFileSync, mkdirSync } from 'fs';
@@ -132,11 +132,11 @@ const API_SPEC = [
 //  Main //
 
 async function main() {
-  if (!process.env.ANTHROPIC_API_KEY) {
+  if (!process.env.OPENAI_API_KEY) {
     console.error(
-      '\n  ANTHROPIC_API_KEY is not set.\n' +
+      '\n  OPENAI_API_KEY is not set.\n' +
       '   Set it in .env or export it before running this script:\n' +
-      '   export ANTHROPIC_API_KEY=sk-ant-...\n'
+      '   export OPENAI_API_KEY=sk-ant-...\n'
     );
     process.exit(1);
   }

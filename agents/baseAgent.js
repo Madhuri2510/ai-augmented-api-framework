@@ -1,25 +1,25 @@
 /**
- * BaseAgent — wraps the Anthropic Claude API for all test agents.
+ * BaseAgent — wraps the OpenAI API for all test agents.
  *
  * Provides:
- *  - Shared client configuration
+ *  - Shared OpenAI client configuration
  *  - Structured JSON response parsing with fallback
  *  - Simple retry logic for transient API errors
- *  - A graceful no-op when ANTHROPIC_API_KEY is absent
+ *  - Graceful no-op when OPENAI_API_KEY is absent
  *    (so CI still works without the key; agents return null)
  */
 
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import { config } from '../config/environments.js';
 
 export class BaseAgent {
   constructor() {
-    this.model = 'claude-sonnet-4-20250514';
+    this.model     = config.openaiModel;   // e.g. 'gpt-4o', set in .env file
     this.maxTokens = 2000;
-    this.hasApiKey = Boolean(config.anthropicApiKey);
+    this.hasApiKey = Boolean(config.openaiApiKey);
 
     if (this.hasApiKey) {
-      this.client = new Anthropic({ apiKey: config.anthropicApiKey });
+      this.client = new OpenAI({ apiKey: config.openaiApiKey });
     }
   }
 
@@ -28,7 +28,7 @@ export class BaseAgent {
   }
 
   /**
-   * Send a prompt to Claude and return the text response.
+   * Send a prompt to the OpenAI chat API and return the text response.
    *
    * @param {string} systemPrompt
    * @param {string} userPrompt
@@ -36,28 +36,30 @@ export class BaseAgent {
    */
   async ask(systemPrompt, userPrompt) {
     if (!this.hasApiKey) {
-      console.warn(`[${this.name}] ANTHROPIC_API_KEY not set — skipping AI enrichment.`);
+      console.warn(`[${this.name}] OPENAI_API_KEY not set — skipping AI enrichment.`);
       return null;
     }
 
     try {
-      const message = await this.client.messages.create({
-        model: this.model,
+      const response = await this.client.chat.completions.create({
+        model:      this.model,
         max_tokens: this.maxTokens,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userPrompt }],
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user',   content: userPrompt   },
+        ],
       });
 
-      return message.content[0]?.text ?? null;
+      return response.choices[0]?.message?.content ?? null;
     } catch (err) {
-      console.error(`[${this.name}] Claude API error:`, err.message);
+      console.error(`[${this.name}] OpenAI API error:`, err.message);
       return null;
     }
   }
 
   /**
    * Same as `ask` but parses the response as JSON.
-   * Strips markdown code fences if Claude wraps the JSON in them.
+   * Strips markdown code fences if the model wraps the JSON in them.
    *
    * @param {string} systemPrompt
    * @param {string} userPrompt
@@ -72,7 +74,7 @@ export class BaseAgent {
       const clean = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
       return JSON.parse(clean);
     } catch {
-      console.error(`[${this.name}] Failed to parse JSON response from Claude:`, raw.slice(0, 200));
+      console.error(`[${this.name}] Failed to parse JSON response from OpenAI:`, raw.slice(0, 200));
       return null;
     }
   }

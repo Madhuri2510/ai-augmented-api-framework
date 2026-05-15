@@ -5,65 +5,59 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main]
-  # Also allow manual runs from the Actions tab
   workflow_dispatch:
-  # Nightly scheduled run to catch API regressions
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options: [dev, uat, prod]
   schedule:
-    - cron: '0 6 * * *'  # 06:00 UTC daily
+    - cron: '0 6 * * *'   # Nightly against dev
 
 jobs:
   api-tests:
-    name: Run API Test Suite
+    name: Tests (${{ matrix.env }})
     runs-on: ubuntu-latest
 
     strategy:
-      # Don't cancel other environments if one fails
       fail-fast: false
       matrix:
-        node-version: [20.x]
+        # On push/PR run dev only; manual dispatch uses the chosen env
+        env:
+          - ${{ github.event.inputs.environment || 'dev' }}
 
     steps:
-      # Checkout #
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      #  Node setup #
-      - name: Set up Node.js ${{ matrix.node-version }}
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: '20.x'
           cache: 'npm'
 
-      #  Install #
       - name: Install dependencies
         run: npm ci
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
-        # Only chromium is needed — API tests don't open a browser but
-        # Playwright still requires at least one browser to be installed.
 
-      # Lint / type-check (fast fail) #
-      # Uncomment if you add ESLint:
-      # - name: Lint
-      #   run: npm run lint
-
-      #  Tests #
-      - name: Run Playwright API tests
-        run: npx playwright test
+      - name: Run Playwright API tests (${{ matrix.env }})
+        run: npm run test:${{ matrix.env }}
         env:
-          BASE_URL:         ${{ vars.BASE_URL || 'https://restful-booker.herokuapp.com' }}
-          BOOKER_USERNAME:  ${{ secrets.BOOKER_USERNAME || 'admin' }}
-          BOOKER_PASSWORD:  ${{ secrets.BOOKER_PASSWORD || 'password123' }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Override env-file values with CI secrets when set
+          BOOKER_USERNAME:  ${{ secrets.BOOKER_USERNAME }}
+          BOOKER_PASSWORD:  ${{ secrets.BOOKER_PASSWORD }}
+          OPENAI_API_KEY:   ${{ secrets.OPENAI_API_KEY }}
           CI: true
 
-      #  Reports #
       - name: Upload HTML report
         uses: actions/upload-artifact@v4
-        if: always()   # Upload even if tests fail
+        if: always()
         with:
-          name: playwright-report-${{ github.run_id }}
+          name: playwright-report-${{ matrix.env }}-${{ github.run_id }}
           path: playwright-report/
           retention-days: 30
 
@@ -71,83 +65,73 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: test-results-json-${{ github.run_id }}
+          name: test-results-${{ matrix.env }}-${{ github.run_id }}
           path: reports/test-results.json
           retention-days: 30
 
-      #  AI Report (only if API key is present) #
       - name: Generate AI test summary
-        if: always() && env.ANTHROPIC_API_KEY != ''
+        if: always() && env.OPENAI_API_KEY != ''
         run: node scripts/analyze-report.js
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        continue-on-error: true  # Don't fail CI if AI summary fails
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        continue-on-error: true
 
       - name: Upload AI summary
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: ai-summary-${{ github.run_id }}
+          name: ai-summary-${{ matrix.env }}-${{ github.run_id }}
           path: reports/ai-summary.md
           retention-days: 30
 
-      #  Summary in PR #
-      - name: Post test summary to job
+      - name: Post test summary
         if: always()
         run: |
-          echo "##  Playwright Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 🎭 Playwright Results — ${{ matrix.env }}" >> $GITHUB_STEP_SUMMARY
           if [ -f reports/test-results.json ]; then
-            PASSED=$(cat reports/test-results.json | python3 -c "
+            python3 -c "
           import json, sys
-          data = json.load(sys.stdin)
-          suites = data.get('suites', [])
+          data = json.load(open('reports/test-results.json'))
           def count(suites):
-              p, f, s = 0, 0, 0
+              p,f,s=0,0,0
               for suite in suites:
-                  for spec in suite.get('specs', []):
-                      for test in spec.get('tests', []):
-                          status = test.get('results', [{}])[0].get('status', '')
-                          if status == 'passed': p += 1
-                          elif status == 'failed': f += 1
-                          elif status == 'skipped': s += 1
-                  p2, f2, s2 = count(suite.get('suites', []))
-                  p += p2; f += f2; s += s2
-              return p, f, s
-          p, f, s = count(suites)
+                  for spec in suite.get('specs',[]):
+                      for test in spec.get('tests',[]):
+                          st=test.get('results',[{}])[0].get('status','')
+                          if st=='passed': p+=1
+                          elif st=='failed': f+=1
+                          elif st=='skipped': s+=1
+                  p2,f2,s2=count(suite.get('suites',[]))
+                  p+=p2;f+=f2;s+=s2
+              return p,f,s
+          p,f,s=count(data.get('suites',[]))
           print(f' Passed: {p} |  Failed: {f} | ⏭ Skipped: {s}')
-            " 2>/dev/null || echo "Could not parse results")
-            echo "$PASSED" >> $GITHUB_STEP_SUMMARY
-          else
-            echo " No test results file found" >> $GITHUB_STEP_SUMMARY
+            " >> $GITHUB_STEP_SUMMARY
           fi
 
-  #  Optional: generate AI test cases when API spec changes #
-  generate-test-cases:
-    name: AI Test Case Generation
+  # Run UAT automatically after dev passes on main
+  promote-to-uat:
+    name: Tests (uat) — post-merge smoke
     runs-on: ubuntu-latest
-    # Only run on pushes that touch the spec definition
-    if: github.event_name == 'push' && contains(github.event.head_commit.modified, 'scripts/generate-tests.js')
+    needs: api-tests
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
-        with:
-          node-version: '20.x'
-          cache: 'npm'
-
+        with: { node-version: '20.x', cache: 'npm' }
       - run: npm ci
-
-      - name: Generate AI test cases
-        run: node scripts/generate-tests.js
+      - run: npx playwright install --with-deps chromium
+      - name: Run UAT smoke tests
+        run: npm run test:uat
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        continue-on-error: true
-
-      - name: Upload generated test cases
-        uses: actions/upload-artifact@v4
+          BOOKER_USERNAME: ${{ secrets.BOOKER_USERNAME }}
+          BOOKER_PASSWORD: ${{ secrets.BOOKER_PASSWORD }}
+          OPENAI_API_KEY:  ${{ secrets.OPENAI_API_KEY }}
+          CI: true
+      - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: ai-generated-test-cases
-          path: reports/ai-generated-test-cases.json
-          retention-days: 90
+          name: playwright-report-uat-${{ github.run_id }}
+          path: playwright-report/
+          retention-days: 30
