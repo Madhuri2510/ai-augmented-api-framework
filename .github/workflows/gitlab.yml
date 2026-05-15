@@ -1,0 +1,153 @@
+name: Playwright API Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  # Also allow manual runs from the Actions tab
+  workflow_dispatch:
+  # Nightly scheduled run to catch API regressions
+  schedule:
+    - cron: '0 6 * * *'  # 06:00 UTC daily
+
+jobs:
+  api-tests:
+    name: Run API Test Suite
+    runs-on: ubuntu-latest
+
+    strategy:
+      # Don't cancel other environments if one fails
+      fail-fast: false
+      matrix:
+        node-version: [20.x]
+
+    steps:
+      # Checkout #
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      #  Node setup #
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      #  Install #
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        # Only chromium is needed — API tests don't open a browser but
+        # Playwright still requires at least one browser to be installed.
+
+      # Lint / type-check (fast fail) #
+      # Uncomment if you add ESLint:
+      # - name: Lint
+      #   run: npm run lint
+
+      #  Tests #
+      - name: Run Playwright API tests
+        run: npx playwright test
+        env:
+          BASE_URL:         ${{ vars.BASE_URL || 'https://restful-booker.herokuapp.com' }}
+          BOOKER_USERNAME:  ${{ secrets.BOOKER_USERNAME || 'admin' }}
+          BOOKER_PASSWORD:  ${{ secrets.BOOKER_PASSWORD || 'password123' }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CI: true
+
+      #  Reports #
+      - name: Upload HTML report
+        uses: actions/upload-artifact@v4
+        if: always()   # Upload even if tests fail
+        with:
+          name: playwright-report-${{ github.run_id }}
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Upload JSON report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-json-${{ github.run_id }}
+          path: reports/test-results.json
+          retention-days: 30
+
+      #  AI Report (only if API key is present) #
+      - name: Generate AI test summary
+        if: always() && env.ANTHROPIC_API_KEY != ''
+        run: node scripts/analyze-report.js
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        continue-on-error: true  # Don't fail CI if AI summary fails
+
+      - name: Upload AI summary
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ai-summary-${{ github.run_id }}
+          path: reports/ai-summary.md
+          retention-days: 30
+
+      #  Summary in PR #
+      - name: Post test summary to job
+        if: always()
+        run: |
+          echo "##  Playwright Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f reports/test-results.json ]; then
+            PASSED=$(cat reports/test-results.json | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          suites = data.get('suites', [])
+          def count(suites):
+              p, f, s = 0, 0, 0
+              for suite in suites:
+                  for spec in suite.get('specs', []):
+                      for test in spec.get('tests', []):
+                          status = test.get('results', [{}])[0].get('status', '')
+                          if status == 'passed': p += 1
+                          elif status == 'failed': f += 1
+                          elif status == 'skipped': s += 1
+                  p2, f2, s2 = count(suite.get('suites', []))
+                  p += p2; f += f2; s += s2
+              return p, f, s
+          p, f, s = count(suites)
+          print(f' Passed: {p} |  Failed: {f} | ⏭ Skipped: {s}')
+            " 2>/dev/null || echo "Could not parse results")
+            echo "$PASSED" >> $GITHUB_STEP_SUMMARY
+          else
+            echo " No test results file found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  #  Optional: generate AI test cases when API spec changes #
+  generate-test-cases:
+    name: AI Test Case Generation
+    runs-on: ubuntu-latest
+    # Only run on pushes that touch the spec definition
+    if: github.event_name == 'push' && contains(github.event.head_commit.modified, 'scripts/generate-tests.js')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Generate AI test cases
+        run: node scripts/generate-tests.js
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        continue-on-error: true
+
+      - name: Upload generated test cases
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-generated-test-cases
+          path: reports/ai-generated-test-cases.json
+          retention-days: 90

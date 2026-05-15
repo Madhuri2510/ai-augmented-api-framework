@@ -1,26 +1,29 @@
 {
   "name": "ai-augmented-api-framework",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "directories": {
-    "test": "tests"
-  },
+  "description": "AI-powered Playwright API testing framework for Restful-Booker microservice",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "playwright test",
+    "test:auth": "playwright test tests/auth.spec.js",
+    "test:booking:create": "playwright test tests/booking-create.spec.js",
+    "test:booking:read": "playwright test tests/booking-read.spec.js",
+    "test:booking:update": "playwright test tests/booking-update.spec.js",
+    "test:booking:patch": "playwright test tests/booking-patch.spec.js",
+    "test:booking:delete": "playwright test tests/booking-delete.spec.js",
+    "test:security": "playwright test tests/security.spec.js",
+    "test:report": "playwright test --reporter=html && playwright show-report",
+    "generate:tests": "node scripts/generate-tests.js",
+    "agent:report": "node scripts/analyze-report.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Madhuri2510/ai-augmented-api-framework.git"
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/Madhuri2510/ai-augmented-api-framework/issues"
-  },
-  "homepage": "https://github.com/Madhuri2510/ai-augmented-api-framework#readme",
   "devDependencies": {
-    "@playwright/test": "^1.60.0"
+    "@playwright/test": "^1.50.0",
+    "dotenv": "^16.6.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

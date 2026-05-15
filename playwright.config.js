@@ -33,5 +33,5 @@ export default defineConfig({
   },
 
   // Global setup / teardown hooks
-  globalSetup: './config/global-setup.js',
+  globalSetup: './config/globalSetup.js',
 });
