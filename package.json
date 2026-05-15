@@ -1,0 +1,26 @@
+{
+  "name": "ai-augmented-api-framework",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Madhuri2510/ai-augmented-api-framework.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Madhuri2510/ai-augmented-api-framework/issues"
+  },
+  "homepage": "https://github.com/Madhuri2510/ai-augmented-api-framework#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.60.0"
+  }
+}
