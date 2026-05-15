@@ -7,7 +7,7 @@ import { request } from '@playwright/test';
 import { config } from './environments.js';
 
 export default async function globalSetup() {
-  console.log('\n🔍 Verifying API health before test run...');
+  console.log('\n Verifying API health before test run');
 
   const ctx = await request.newContext({ baseURL: config.baseURL });
 
@@ -21,7 +21,7 @@ export default async function globalSetup() {
       );
     }
 
-    console.log(`✅ API is healthy at ${config.baseURL}\n`);
+    console.log(`API is healthy at ${config.baseURL}\n`);
   } catch (err) {
     console.error(' API health check failed:', err.message);
     throw err;
