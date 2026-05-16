@@ -13,6 +13,7 @@
 import { test, expect } from '../fixtures/index.js';
 import { DataFactory } from '../helpers/DataFactory.js';
 import { assertBookingShape } from '../helpers/assertions.js';
+import { config } from '../config/environments.js';  // ← 1. import config
 
 test.describe('PATCH /booking/{id} — Partial Update', () => {
 
@@ -100,7 +101,7 @@ test.describe('PATCH /booking/{id} — Partial Update', () => {
 
   test('PATCH-008 | Request without auth returns 403', async ({ testBooking, request }) => {
     const res = await request.patch(
-      `https://restful-booker.herokuapp.com/booking/${testBooking.id}`,
+      `${config.baseURL}/booking/${testBooking.id}`,
       { data: { firstname: 'NoAuth' } },
     );
     expect(res.status(), 'Unauthenticated PATCH should return 403').toBe(403);

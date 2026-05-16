@@ -9,6 +9,7 @@
 
 import { test, expect } from '../fixtures/index.js';
 import { assertAuthToken, assertAuthFailure } from '../helpers/assertions.js';
+import { config } from '../config/environments.js';  
 
 test.describe('POST /auth — Authentication', () => {
 
@@ -77,7 +78,7 @@ test.describe('POST /auth — Authentication', () => {
   });
 
   test('AUTH-008 | Missing password field returns bad credentials', async ({ request }) => {
-    const res = await request.post('https://restful-booker.herokuapp.com/auth', {
+    const res = await request.post(`${config.baseURL}/auth`, {
       data: { username: 'admin' }, // no password key at all
     });
 
@@ -87,7 +88,7 @@ test.describe('POST /auth — Authentication', () => {
   });
 
   test('AUTH-009 | Missing username field returns bad credentials', async ({ request }) => {
-    const res = await request.post('https://restful-booker.herokuapp.com/auth', {
+    const res = await request.post(`${config.baseURL}/auth`, {
       data: { password: 'password123' },
     });
 
@@ -117,7 +118,7 @@ test.describe('POST /auth — Authentication', () => {
   });
 
   test('AUTH-012 | Empty body returns 200 with bad credentials', async ({ request }) => {
-    const res = await request.post('https://restful-booker.herokuapp.com/auth', {
+    const res = await request.post(`${config.baseURL}/auth`, {
       data: {},
     });
     expect(res.status()).toBe(200);

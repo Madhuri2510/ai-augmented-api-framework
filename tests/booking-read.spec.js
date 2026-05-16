@@ -9,6 +9,7 @@
 
 import { test, expect } from '../fixtures/index.js';
 import { assertBookingList, assertBookingShape } from '../helpers/assertions.js';
+import { config } from '../config/environments.js';  // ← 1. import config
 
 test.describe('GET /booking — List All Bookings', () => {
 

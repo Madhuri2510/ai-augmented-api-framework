@@ -11,6 +11,7 @@
 import { test, expect } from '../fixtures/index.js';
 import { DataFactory } from '../helpers/DataFactory.js';
 import { assertCreateBookingResponse, assertBookingShape } from '../helpers/assertions.js';
+import { config } from '../config/environments.js';  // ← 1. import config
 
 test.describe('POST /booking — Create Booking', () => {
 

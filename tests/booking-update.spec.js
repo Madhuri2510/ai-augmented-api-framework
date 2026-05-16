@@ -10,6 +10,7 @@
 import { test, expect } from '../fixtures/index.js';
 import { DataFactory } from '../helpers/DataFactory.js';
 import { assertBookingShape } from '../helpers/assertions.js';
+import { config } from '../config/environments.js';  // ← 1. import config
 
 test.describe('PUT /booking/{id} — Full Update', () => {
 
@@ -66,7 +67,7 @@ test.describe('PUT /booking/{id} — Full Update', () => {
     const payload = DataFactory.createFullUpdate();
 
     const res = await request.put(
-      `https://restful-booker.herokuapp.com/booking/${testBooking.id}`,
+      `${config.baseURL}/booking/${testBooking.id}`,
       { data: payload }, // no auth header
     );
 

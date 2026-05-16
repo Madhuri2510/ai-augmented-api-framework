@@ -9,6 +9,7 @@
 
 import { test, expect } from '../fixtures/index.js';
 import { DataFactory } from '../helpers/DataFactory.js';
+import { config } from '../config/environments.js';  // ← 1. import config
 
 test.describe('DELETE /booking/{id} — Delete Booking', () => {
 
@@ -52,7 +53,7 @@ test.describe('DELETE /booking/{id} — Delete Booking', () => {
 
   test('DELETE-004 | Delete without auth token returns 403', async ({ testBooking, request }) => {
     const res = await request.delete(
-      `https://restful-booker.herokuapp.com/booking/${testBooking.id}`,
+      `${config.baseURL}/booking/${testBooking.id}`,
       // No Cookie header
     );
     expect(res.status(), 'Delete without auth should return 403').toBe(403);

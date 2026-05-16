@@ -13,6 +13,7 @@
 
 import { test, expect } from '../fixtures/index.js';
 import { DataFactory } from '../helpers/dataFactory.js';
+import { config } from '../config/environments.js';  // ← 1. import config
 
 test.describe('Security & API Hygiene', () => {
 
@@ -20,7 +21,7 @@ test.describe('Security & API Hygiene', () => {
 
   test('SEC-001 | PUT without any auth header is rejected with 403', async ({ testBooking, request }) => {
     const res = await request.put(
-      `https://restful-booker.herokuapp.com/booking/${testBooking.id}`,
+     `${config.baseURL}/booking/${testBooking.id}`,
       { data: DataFactory.createFullUpdate() },
     );
     expect(res.status()).toBe(403);
@@ -28,7 +29,7 @@ test.describe('Security & API Hygiene', () => {
 
   test('SEC-002 | DELETE without any auth header is rejected with 403', async ({ testBooking, request }) => {
     const res = await request.delete(
-      `https://restful-booker.herokuapp.com/booking/${testBooking.id}`,
+      `${config.baseURL}/booking/${testBooking.id}`,
     );
     expect(res.status()).toBe(403);
   });
