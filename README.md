@@ -139,10 +139,10 @@ npm run test:dev:security
 ### All available npm scripts
 
 ```bash
-npm test                      # Full suite (uses ENV=dev by default)
+npm test                          # Full suite 
 npm run test:dev:auth             # POST /auth tests only
 npm run test:uat:booking:create   # POST /booking tests only
-npm run test:prod:booking:read     # GET /booking tests only
+npm run test:prod:booking:read    # GET /booking tests only
 npm run test:dev:booking:update   # PUT /booking/{id} tests only
 npm run test:dev:booking:patch    # PATCH /booking/{id} tests only
 npm run test:uat:booking:delete   # DELETE /booking/{id} tests only
