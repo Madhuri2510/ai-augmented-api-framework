@@ -13,7 +13,7 @@ import { config } from '../config/environments.js';  // ← 1. import config
 
 test.describe('DELETE /booking/{id} — Delete Booking', () => {
 
-  // ─── Positive ─────────────────────────────────────────────────────────────
+  // Positive //
 
   test('DELETE-001 | Authenticated delete returns 201 Created', async ({ apiClient, authToken }) => {
     // Create a fresh booking so we can delete it in this test
@@ -72,7 +72,7 @@ test.describe('DELETE /booking/{id} — Delete Booking', () => {
   //  Idempotency / Edge //
 
   test('DELETE-007 | Deleting a non-existent booking returns 405', async ({ apiClient, authToken }) => {
-    const res = await apiClient.deleteBooking(999_999_999, authToken);
+    const res = await apiClient.deleteBooking(999999999, authToken);
 
     // Restful-Booker returns 405 for missing ID on DELETE
     expect([404, 405], 'Non-existent delete should return 404 or 405').toContain(res.status());

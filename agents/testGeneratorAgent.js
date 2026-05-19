@@ -94,7 +94,7 @@ ${JSON.stringify(endpointSpec, null, 2)}
   }
 }
 
-// ─── Utility ─────────────────────────────────────────────────────────────────
+//  Utility //
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /**

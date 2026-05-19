@@ -115,7 +115,7 @@ test.describe('PATCH /booking/{id} — Partial Update', () => {
   //  Negative //
 
   test('PATCH-010 | Non-existent booking ID returns 405 or 404', async ({ apiClient, authToken }) => {
-    const res = await apiClient.patchBooking(999_999_999, { firstname: 'Ghost' }, authToken);
+    const res = await apiClient.patchBooking(999999999, { firstname: 'Ghost' }, authToken);
     expect([404, 405]).toContain(res.status());
   });
 
@@ -124,9 +124,8 @@ test.describe('PATCH /booking/{id} — Partial Update', () => {
   test('PATCH-011 | PATCH with empty object — no fields should change', async ({ apiClient, authToken, testBooking }) => {
     const res = await apiClient.patchBooking(testBooking.id, {}, authToken);
 
-    // API may accept or reject — document real behaviour
-    const status = res.status();
-    expect([200, 400]).toContain(status);
+     const status = res.status();
+    expect([200]).toContain(status);
 
     if (status === 200) {
       const body = await res.json();
