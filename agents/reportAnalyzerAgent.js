@@ -46,7 +46,7 @@ Produce the QA report as described.
   }
 
   /**
-   * Reduce the full Playwright JSON report to just the fields Claude needs.
+   * Reduce the full Playwright JSON report to just the fields OpenAI needs.
    * This avoids sending huge payloads to the API.
    */
   _distilReport(report) {

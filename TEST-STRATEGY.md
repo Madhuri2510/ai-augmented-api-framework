@@ -107,7 +107,7 @@ assertion logic is defined once and used consistently across all test files.
 
 ## 6. AI Agent Architecture
 
-The framework includes three AI agents powered by the Claude API:
+The framework includes three AI agents powered by the Open API:
 
 ### TestGeneratorAgent
 Accepts an API endpoint specification (method, path, request/response schema)
@@ -126,7 +126,7 @@ After a test run, reads the Playwright JSON report and produces an executive
 summary in Markdown: pass rate, failure analysis, risk patterns, and
 recommended actions. Run via `npm run agent:report`.
 
-All agents degrade gracefully when `ANTHROPIC_API_KEY` is absent — tests still
+All agents degrade gracefully when `OPENAI_API_KEY` is absent — tests still
 run and pass; the agents simply skip enrichment with a console warning.
 
 ---
@@ -143,8 +143,10 @@ rather than treated as bugs, since Restful-Booker is a training tool:
 | Successful delete returns **201** (not 204) | DELETE /booking/{id} | Unusual status code |
 | Non-existent ID on PUT/DELETE returns **405** (not 404) | PUT, DELETE | Method Not Allowed |
 | `totalprice` with string value may be coerced silently | POST /booking | Lenient type handling |
+| Booking is successfull with `totalprice` 0 | POST, PUT | Response returns `totalprice` as 0 |
 | The API resets state periodically | All write endpoints | Tests must not rely on pre-existing data |
 | Parallel writes can produce race conditions | POST, PUT | `workers: 1` keeps tests sequential |
+
 
 ---
 

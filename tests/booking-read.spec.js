@@ -9,7 +9,7 @@
 
 import { test, expect } from '../fixtures/index.js';
 import { assertBookingList, assertBookingShape } from '../helpers/assertions.js';
-import { config } from '../config/environments.js';  // ← 1. import config
+import { config } from '../config/environments.js'; 
 
 test.describe('GET /booking — List All Bookings', () => {
 
@@ -88,7 +88,7 @@ test.describe('GET /booking/{id} — Get Single Booking', () => {
   });
 
   test('READ-008 | Non-existent ID returns 404', async ({ apiClient }) => {
-    const res = await apiClient.getBooking(999_999_999);
+    const res = await apiClient.getBooking(999999999);
 
     expect(res.status(), 'Non-existent ID should return 404').toBe(404);
   });

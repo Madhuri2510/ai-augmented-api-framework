@@ -65,5 +65,5 @@ export const test = base.extend({
 
 export { expect };
 
-// ─── Utility ─────────────────────────────────────────────────────────────────
+// Utility //
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

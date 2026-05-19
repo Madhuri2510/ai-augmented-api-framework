@@ -63,11 +63,11 @@ export class DataFactory {
 
   /** Valid partial update payload (for PATCH) */
   static createPartialUpdate(overrides = {}) {
-    return {
+    return this.createBooking({
       firstname: 'UpdatedFirstName',
       lastname:  'UpdatedLastName',
       ...overrides,
-    };
+    });
   }
 
   /** Full update payload (for PUT) */

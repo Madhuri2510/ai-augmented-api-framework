@@ -76,6 +76,8 @@ test.describe('POST /booking — Create Booking', () => {
     expect(id1, 'Two bookings should have different IDs').not.toBe(id2);
   });
 
+ 
+
   // Negative //
 
   test('CREATE-006 | Missing firstname returns 500', async ({ apiClient }) => {
@@ -154,11 +156,11 @@ test.describe('POST /booking — Create Booking', () => {
   });
 
   test('CREATE-014 | Very large totalprice is handled', async ({ apiClient }) => {
-    const payload = DataFactory.createBooking({ totalprice: 9_999_999 });
+    const payload = DataFactory.createBooking({ totalprice: 9999999999 });
     const res = await apiClient.createBooking(payload);
 
     expect(res.status()).toBe(200);
     const body = await res.json();
-    expect(body.booking.totalprice).toBe(9_999_999);
+    expect(body.booking.totalprice).toBe(9999999999);
   });
 });
